@@ -32,6 +32,8 @@ class TicTacToeClient:
         self.port_entry.insert(0, str(SERVER_PORT))
         self.port_entry.pack(side="left")
         tk.Button(self.topfrm, text="Connect", command=self.connect).pack(side="left", padx=5)
+        self.reset_button = tk.Button(master, text="Reset / Rematch", command=self.reset, state=tk.DISABLED)
+        self.reset_button.pack(pady=5)
 
         self.board_frame = tk.Frame(master)
         self.board_frame.pack()
@@ -45,6 +47,12 @@ class TicTacToeClient:
         self.status = tk.Label(master, text="Not connected")
         self.status.pack(pady=5)
 
+    def reset(self):
+        if not self.connected:
+            return
+        send_json(self.sock, {"type": "reset"})
+        self.reset_button.config(state=tk.DISABLED)
+    
     def connect(self):
         host = self.host_entry.get().strip()
         port = int(self.port_entry.get().strip())
@@ -114,6 +122,7 @@ class TicTacToeClient:
             else:
                 messagebox.showinfo("Game Over", f"{winner} wins!")
             self.status.configure(text="Game over")
+            self.reset_button.config(state=tk.NORMAL)
         elif t == "error":
             messagebox.showerror("Error", msg.get("msg",""))
         elif t == "end":
@@ -133,6 +142,11 @@ class TicTacToeClient:
             self.turn = msg.get("turn", self.turn)
             self.update_buttons()
             self.status.configure(text=f"Game started. Turn: {self.turn}")
+        elif t == "reset":
+            self.board = [None] * 9
+            self.turn = msg.get("turn", "X")
+            self.update_buttons()
+            self.status.config(text=f"New game started! Turn: {self.turn}")
 
     def on_click(self, idx):
         if not self.connected:

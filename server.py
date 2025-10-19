@@ -26,7 +26,7 @@ class GameRoom:
     def __init__(self):
         self.lock = threading.Lock()
         self.players = []  # list of (conn, addr, name, symbol)
-        self.board = [None]*9
+        self.board = [None] * 9
         self.turn = None  # 'X' or 'O'
         self.finished = False
 
@@ -90,6 +90,13 @@ class GameRoom:
             # swap turn
             self.turn = 'O' if self.turn == 'X' else 'X'
             self.broadcast({"type":"move","pos":pos,"symbol":symbol,"turn":self.turn,"board":self.board})
+    
+    def reset_board(self, conn):
+        with self.lock:
+            self.board = [None] * 9
+            self.turn = 'X'
+            self.finished = False
+            self.broadcast({"type": "reset", "board": self.board, "turn": self.turn})
 
 room = GameRoom()
 
@@ -137,6 +144,9 @@ def client_thread(conn, addr):
                         continue
                     pos = int(msg.get("pos", -1))
                     room.handle_move(conn, player_symbol, pos)
+                elif msg.get("type") == "reset":
+                    print(f"{name} has requested to restart the game.")
+                    room.reset_board(conn)
                 else:
                     send_json(conn, {"type":"error","msg":"unknown type"})
     except Exception as e:
