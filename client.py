@@ -147,6 +147,7 @@ class TicTacToeClient:
             self.turn = msg.get("turn", "X")
             self.update_buttons()
             self.status.config(text=f"New game started! Turn: {self.turn}")
+            self.reset_button.config(state=tk.DISABLED)
 
     def on_click(self, idx):
         if not self.connected:
